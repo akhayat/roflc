@@ -1,0 +1,649 @@
+/*
+ *  roflkode.jj
+ *
+ *  JavaCC specification for ROFLKODE.
+ */
+
+options {
+  UNICODE_INPUT = true;
+  STATIC = false;
+}
+
+PARSER_BEGIN(Parser)
+
+package edu.lmu.cs.akhayat.roflkode.syntax;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.io.Reader;
+import edu.lmu.cs.akhayat.util.Log;
+import edu.lmu.cs.akhayat.roflkode.entities.*;
+
+public class Parser {
+
+    /**
+     * Returns the result of parsing the ROFLKODE program on the given Reader.
+     */
+    public Script parse(Reader reader, Log log) {
+        try {
+            return parseScript();
+        } catch (TokenMgrError e) {
+            log.exception(e);
+            return null;
+        } catch (ParseException e) {
+            log.exception(e);
+            return null;
+        }
+    }
+}
+
+PARSER_END(Parser)
+
+SKIP: {
+    " " | "\t" | <"BTW" (~["\n","\r"])*>
+}
+
+TOKEN: {
+    "HAI" | "KTHXBYE" | "CAN" | "HAS" | "I" | "A" | "R" | "AN" | "YO" | "UR"
+    | "UV" | "AKA" | "BRB" | "WIF" | "TEH" | "KAR" | "INT" | "ITZ" | "HWGA"
+    | "DIAF" | "MAEK" | "B00L" | "THEM" | "YARN" | "GTFO" | "NUMBR" | "SRSLY"
+    | "HEREZ" | "GIMMEH" | "PWNZOR" | "BUKKIT" | "UPZORZ" | "FACEPALM"
+    | "NERFZORZ" | "IF" | "CEPT" | "TIL" | "WHIEL" | "NO" | "OIC" | "WTF"
+    | "OMG" | "WAI" | "WERD" | "MEBBE" | "OMGWTF" | "O" | "IM" | "IN" | "TO"
+    | "UP" | "OR" | "AS" | "BY" | "WIN" | "THX" | "PLZ" | "N00B" | "NERF"
+    | "FAIL" | "FROM" | "SAEM" | "NOES" | "PWNS" | "THRU" | "MKAY"
+    | "OUTTA" | "PWNED" | "AWSUM" | "UPPIN" | "NERFIN" | "DIVIDZ" | "BITZLEFT"
+    | "BITZRIGHT" | "TIEMZ" | "OVR" | "LEFTOVR" | "NAA" | "BITZFLIP" | "SIEZ"
+    | "B00LZOR" | "INTZOR" | "NUMZOR" | "KARZOR" | "YARNZOR" | "BITOR" | "BITAND"
+    | "BITXOR" | "ORELSE" | "ANALSO"
+|
+    "?" | "!!" | "!!!" | "~~" | "<:" | ":>" | "[:" | ":]" | "(:" | ":)"
+|
+    < BR: "," | "\n" | "\r" | "\u0085" | "\u2028" | "\u2029" >
+|
+    < INTLIT: ("-")? (["0"-"9"])+ >
+|
+    < NUMLIT: ("-")? (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? >
+|
+    < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+|
+    < CHARLIT:
+        "'"
+        (
+            ~["'", ":" ,"\u0000"-"\u001f", "\u007f"-"\u009f"]
+        |
+            ":" ( [")", ">", ":", "'", "\""] | <UNICODE_SPEC> )
+        )
+        "'"
+    >
+|
+    < STRINGLIT:
+        "\""
+        (
+            ~["'", ":" ,"\u0000"-"\u001f", "\u007f"-"\u009f"]
+        |
+            ":" ( [")", ">", ":", "'", "\""] | <UNICODE_SPEC> )
+        )*
+        "\""
+    >
+|
+    < #UNICODE_SPEC:
+        "(" (<HEX>)(<HEX>)?(<HEX>)?(<HEX>)?(<HEX>)?(<HEX>)? ")"
+    >
+|
+    < #HEX: ["0"-"9", "A"-"F", "a"-"f"] >
+|
+    < ID: <LETTER> (<LETTER>|<DIGIT>)* >
+|
+    < #LETTER: [
+        "\u0041"-"\u005a", "\u0061"-"\u007a", "\u00aa", "\u00b5", "\u00ba", "\u00c0"-"\u00d6",
+        "\u00d8"-"\u00f6", "\u00f8"-"\u1fff", "\u3040"-"\u318f", "\u3300"-"\u337f",
+        "\u3400"-"\u3d2d", "\u4e00"-"\u9fff", "\uf900"-"\ufaff", "\ufb00"-"\ufb06",
+        "\ufb13"-"\ufb17", "\ufb1f"-"\ufb28", "\ufb2a"-"\ufb36", "\ufb38"-"\ufb3e",
+        "\ufb40"-"\ufb41", "\ufb43"-"\ufb44", "\ufb46"-"\ufb4f", "\ufb50"-"\ufdd7",
+        "\ufdf0"-"\ufdfd", "\ufe70"-"\ufefc", "\uff1f"-"\uff3a", "\uff3f"-"\uff5e",
+        "\uff61"-"\uffbe", "\uffc2"-"\uffc7", "\uffca"-"\uffcf", "\uffd2"-"\uffd7",
+        "\uffda"-"\uffdc"
+    ] >
+|
+    < #DIGIT: [
+        "\u0030"-"\u0039", "\u0660"-"\u0669", "\u06f0"-"\u06f9", "\u0966"-"\u096f",
+        "\u09e6"-"\u09ef", "\u0a66"-"\u0a6f", "\u0ae6"-"\u0aef", "\u0b66"-"\u0b6f",
+        "\u0be7"-"\u0bef", "\u0c66"-"\u0c6f", "\u0ce6"-"\u0cef", "\u0d66"-"\u0d6f",
+        "\u0e50"-"\u0e59", "\u0ed0"-"\u0ed9", "\u1040"-"\u1049"
+    ] >
+}
+
+Script parseScript(): {
+    List<Statement> statements = new ArrayList<Statement>();
+    Statement s;
+}{
+    (<BR>)*
+    "HAI"
+    (<BR>)+
+    (parseImport())*
+    (s = parseStmt() {statements.add(s);})+
+    "KTHXBYE"
+    (<BR>)*
+    <EOF>
+    {return new Script(statements);}
+}
+
+void parseImport(): {
+}{
+    "CAN" "HAS" <ID> "?" (<BR>)+
+}
+
+Statement parseStmt(): {
+    Statement s;
+    Declarable d;
+    ModifierExpression e;
+}{
+    (
+        d=parseDec() {s = new DeclarationStatement(d);}
+    |
+        LOOKAHEAD ("PLZ" | "IM" | parseExp() ("?" | "WTF")) s=parseComplexStmt()
+    |
+        s = parseSimpleStmt()
+        (e=parseModifier() {s = new ModifiedStatement(s, e);}  )?
+    )
+    (<BR>)+
+    {return s;}
+}
+
+Declarable parseDec(): {
+  Declarable d;
+}{
+    (    LOOKAHEAD(2) d=parseVardec()    |    d=parseFundec()    |    d=parseTypedec()    )
+    {return d;}
+}
+
+Variable parseVardec(): {
+  Type t;
+  Token name;
+  Expression e;
+}{
+    ("I" "HAS" "A" t=parseType() name=<ID>
+    ("ITZ" ("4EVER")? e=parseExp()
+    {return new Variable(name.image, t, e);} )? 
+    {return new Variable(name.image, t);})
+}
+
+Type parseType(): {
+  Token name;
+}{
+   ( name="B00L" | name="KAR" | name="INT" | name="NUMBR" | name="YARN" | name=<ID>)
+   {return new Type(name.image);}
+}
+
+Type parseTypedec(): {
+  Token name;
+}{
+    "TEH" "BUKKIT" "UV" (<BR>)*
+    (parseType() <ID> (<BR>)*)*
+    "AKA" name=<ID>
+    {return new Type(name.image);}
+}
+
+Block parseBlock(): {
+    List<Statement> statements = new ArrayList<Statement>();
+    Statement s;
+}{
+    (LOOKAHEAD(2) s = parseStmt() {statements.add(s);} )*
+    {return new Block(statements);}
+}
+
+Function parseFundec(): {
+  Block b;
+  Type t;
+  Token name;
+  Type returnType = new Type("void");
+  List<Variable> p = new ArrayList<Variable>();
+  Function f;
+}{
+    (
+    ("I" "CAN" ("MAEK" returnType=parseType())?
+    name=<ID> (p=parseParams())? (<BR>)+ b=parseBlock()
+    "SRSLY" 
+    {f = new Function(returnType.getName(), name.image, p, b);})
+    |
+    ("THEM" "CAN" ("MAEK" returnType=parseType())? name=<ID> (p=parseParams())?
+    {f = new Function(returnType.getName(), name.image, p);})
+    )
+    {return f;}
+}
+
+List<Variable> parseParams(): {
+  List<Variable> parameters = new ArrayList<Variable>();
+  Type t;
+  Token name;
+}{
+    ("WIF")? "UR" t=parseType() name=<ID>
+    {parameters.add(new Variable(name.image, t));}
+    ("AN" t=parseType() name=<ID> 
+    {parameters.add(new Variable(name.image, t));})*
+    {return parameters;}
+}
+
+Statement parseSimpleStmt(): {
+    List<Expression> expressions = new ArrayList<Expression>();
+    Expression e;
+    VariableExpression v;
+    Token t;
+}{
+    "YO" (e = parseExp()  {expressions.add(e);})+
+    {return new YoStatement(expressions);}
+    |
+    "FACEPALM" (e = parseExp()  {expressions.add(e);})+
+    {return new FacepalmStatement(expressions);}
+    |
+    "PWNZOR" v = parseVar()
+    {return new PwnzorStatement(v);}
+    |
+    "UPZORZ" v = parseVar()
+    {return new UpzorzStatement(v);}
+    |
+    "NERFZORZ" v = parseVar()
+    {return new NerfzorzStatement(v);}
+    |
+    "GTFO" (v = parseVar() {return new GtfoStatement(v);} )? 
+    {return new GtfoStatement();}
+    |
+    "HWGA" (t=<ID> {return new HwgaStatement(t.image);} )? 
+    {return new HwgaStatement();}
+    |
+    "HEREZ" "UR" e=parseExp()
+     {return new HerezStatement (e);}
+    |
+    "DIAF" (e = parseExp() {return new DiafStatement(e);} )? 
+    {return new DiafStatement();}
+    |
+    "GIMMEH" t=<ID>
+    {return new GimmehStatement(t.image);}
+    |
+    "BRB" e = parseExp() 
+    {return new BrbStatement(e);}
+    |
+    LOOKAHEAD (parseVar() "R") v = parseVar() "R" e = parseExp()
+    {return new AssignmentStatement(v, e);}
+    |
+    t = <ID> expressions = parseArgs()
+    {return new CallStatement(t.image, expressions);}
+}
+
+ModifierExpression parseModifier(): {
+    String s;
+    Expression e;
+}{
+    (
+        "IF" {s = "IF";}
+    |
+        "CEPT" "IF" {s = "CEPT IF";}
+    |
+        "WHIEL" {s = "WHIEL";}
+    |
+        "TIL" {s = "TIL";}
+    )
+    e=parseExp()
+    {return new ModifierExpression(e, s);} 
+}
+
+Statement parseComplexStmt(): {
+    Statement s;
+}{
+    (
+    LOOKAHEAD(parseExp() "?") s=parseConditional()
+    |
+    s=parseSwitch()
+    |
+    s=parseLoop()
+    |
+    s=parseTry()
+    )
+    {return s;}
+}
+
+Statement parseConditional(): {
+  List<ConditionalExpression> m = new ArrayList<ConditionalExpression>(); //statement block
+  Expression e;
+  Block b;
+  ConditionalExpression wb; //werd block
+  Block nwb = null; // NO WAI block
+}{
+    e=parseExp() "?" (<BR>)+
+    "WERD" (<BR>)+ b=parseBlock()
+    {wb = new ConditionalExpression(e, b);}
+    (
+        "MEBBE" e=parseExp() (<BR>)*
+        b=parseBlock()
+        {m.add(new ConditionalExpression(e, b));}
+    )*
+    (
+        "NO" "WAI" (<BR>)*
+        nwb=parseBlock()
+    )?
+    "OIC"
+    {return new ConditionalStatement(wb, m, nwb);}
+}
+
+Statement parseSwitch(): {
+    Expression c;
+    List<ConditionalExpression> omg = new ArrayList<ConditionalExpression>();
+    Expression e;
+    Block b;
+
+}{
+    c=parseExp() "WTF" "?" (<BR>)+
+    (
+        "OMG" e=parseLiteral() (<BR>)+ b=parseBlock()
+        {omg.add(new ConditionalExpression(e, b));}
+    )+
+    "OMGWTF" (<BR>)+
+    b=parseBlock()
+    "OIC"
+    {return new SwitchStatement(c, omg, b);}
+}
+
+Statement parseLoop(): {
+    LoopControlExpression l;
+    String s;
+    Block b;
+    String end;
+}{
+    s=parseLoopStart() (<BR>)*
+    l=parseLoopControl() (<BR>)+
+    b=parseBlock()
+    end = parseLoopEnd()
+    {return new LoopStatement(s, l, b, end);}
+}
+
+String parseLoopStart(): {
+    Token t;
+}{
+    "IM" "IN" "UR" t=<ID>
+    {return t.image;}
+}
+
+LoopControlExpression parseLoopControl(): {
+   Expression e;
+   Expression f;
+   Expression t;
+   VariableExpression v;
+   LoopControlExpression l;
+
+}{
+    (
+    ("WHIEL" | "TIL") e=parseExp()
+    {l = new WhileLoopControl(e);}
+    |
+    ("UPPIN" | "NERFIN")
+    v=parseVar()
+    (
+        "FROM" f=parseExp() "TO" t=parseExp()
+        {l = new ForLoopControl(v, f, t);}
+    |
+        "THRU" e=parseExp()
+        {l = new ForLoopControl(v, e);}
+    )
+    )
+    {return l;}
+}
+
+String parseLoopEnd(): {
+    Token t;
+}{
+    "IM" "OUTTA" "UR" t=<ID>
+    {return t.image;}
+}
+
+Statement parseTry(): {
+    Statement s;
+    Block a;
+    Block o;
+
+}{
+    "PLZ" s=parseSimpleStmt()
+    (<BR>)+
+    "AWSUM" "THX" (<BR>)+
+    a=parseBlock()
+    "O" "NOES" (<BR>)+
+    o=parseBlock()
+    "MKAY"
+    {return new TryStatement(s, a, o);}
+}
+
+Expression parseExp(): {
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp1()
+    ("ORELSE" e2 = parseExp1() {e1 = new BinaryExpression(e1, "ORELSE", e2);})*
+    {return e1;}
+}
+
+Expression parseExp1(): {
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp2()
+    ("ANALSO" e2 = parseExp2() {e1 = new BinaryExpression(e1, "ANALSO", e2);})*
+    {return e1;}
+}
+
+Expression parseExp2(): {
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp3()
+    ("BITOR" e2 = parseExp3() {e1 = new BinaryExpression(e1, "BITOR", e2);})*
+    {return e1;}
+}
+
+Expression parseExp3(): {
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp4()
+    ("BITXOR" e2 = parseExp4() {e1 = new BinaryExpression(e1, "BITXOR", e2);})*
+    {return e1;}
+}
+
+Expression parseExp4(): {
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp5()
+    ("BITAND" e2 = parseExp5() {e1 = new BinaryExpression(e1, "BITAND", e2);})*
+    {return e1;}
+}
+
+Expression parseExp5(): {
+    String op;
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp6()
+    (
+        op = parseRelop()
+        e2 = parseExp6()
+        {e1 = new BinaryExpression(e1, op, e2);}
+    )?
+    {return e1;}
+}
+
+Expression parseExp6(): {
+    String op;
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp7()
+    (
+        op = parseShiftop()
+        e2 = parseExp7()
+        {e1 = new BinaryExpression(e1, op, e2);}
+    )*
+    {return e1;}
+}
+
+
+Expression parseExp7(): {
+    String op;
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp8()
+    (
+        op = parseAddop()
+        e2 = parseExp8()
+        {e1 = new BinaryExpression(e1, op, e2);}
+    )*
+    {return e1;}
+}
+
+Expression parseExp8(): {
+    String op;
+    Expression e1;
+    Expression e2;
+}{
+    e1 = parseExp9()
+    (
+        op = parseMulop()
+        e2 = parseExp9()
+        {e1 = new BinaryExpression(e1, op, e2);}
+    )*
+    {return e1;}
+}
+
+
+Expression parseExp9(): {
+    String op = null;
+    Expression e;
+}{
+    (op = parsePrefixop())? e = parseExp10()
+    {return op == null ? e : new UnaryExpression(op, e);}
+}
+
+Expression parseExp10(): {
+    Expression e;
+    List<Expression> list = new ArrayList<Expression>();
+    Token t;
+}{
+    e = parseLiteral() {return e;}
+|
+    LOOKAHEAD(2) t = <ID> "<:" (e = parseExp()  {list.add(e);})* ":>"
+    {return new BukkitExpression(t.image, list);}
+|
+    e = parseVar() {return e;}
+|
+    "[:" (e = parseExp()  {list.add(e);})* ":]"
+    {return new ArrayExpression(list);}
+|
+    "(" e = parseExp() ")" {return e;}
+}
+
+Literal parseLiteral(): {
+    Token t;
+}{
+    "N00B" {return NoobLiteral.INSTANCE;}
+|
+    "WIN" {return BooleanLiteral.WIN;}
+|
+    "FAIL" {return BooleanLiteral.FAIL;}
+|
+    t = <INTLIT> {return new IntegerLiteral(t.image);}
+|
+    t = <NUMLIT> {return new NumberLiteral(t.image);}
+|
+    t = <CHARLIT> {return new KarLiteral(t.image);}
+|
+    t = <STRINGLIT> {return new StringLiteral(t.image);}
+}
+
+VariableExpression parseVar(): {
+    VariableExpression v;
+    List<Expression> arguments = new ArrayList<Expression>();
+    Expression e;
+    Token t;
+    Token p;
+}{
+    t = <ID>
+    (arguments = parseArgs())?
+    {
+        if (arguments.isEmpty()) {
+            v = new SimpleVariableExpression(t.image);
+        } else {
+            v = new CallExpression(t.image, arguments);
+        }
+   }
+    (
+        "!!" e = parseExp() "!!"
+        {v = new ArraySlotVariableExpression(v, e);}
+    |
+        "!!!" p = <ID>
+        {v = new BukkitSlotVariableExpression(v, p.image);}
+    )*
+    {return v;}
+}
+
+List<Expression> parseArgs(): {
+    List<Expression> arguments = new ArrayList<Expression>();
+    Expression e;
+}{
+    "(:" (e = parseExp()  {arguments.add(e);})* ":)"
+    {return arguments;}
+}
+
+String parseRelop(): {
+}{
+    LOOKAHEAD(2) "PWNS" "OR" "SAEM" "AS" {return ">=";}
+    |
+    "PWNS" {return ">";}
+    |
+    LOOKAHEAD(3) "PWNED" "BY" "OR" "SAEM" "AS" {return "<=";}
+    |
+    "PWNED" "BY" {return "<";}
+    |
+    "SAEM" "AS" {return "==";}
+    |
+    "DIVIDZ" {return "\\";}
+}
+
+String parseShiftop(): {
+    Token t;
+}{
+    (t = "BITZLEFT" | t = "BITZRIGHT")
+    {return t.image;}
+}
+
+String parseAddop(): {
+    Token t;
+}{
+    t = "UP" {return "+";}
+|
+    t = "NERF" {return "-";}
+|
+    t = "~~" {return "~~";}
+}
+
+String parseMulop(): {
+    Token t;
+}{
+    (t = "TIEMZ" | t = "OVR" | t = "LEFTOVR")
+    {return t.image;}
+}
+
+String parsePrefixop(): {
+    Token t;
+}{
+    (
+        t = "NAA"
+    |   t = "BITZFLIP"
+    |   t = "SIEZ" "UV"
+    |   t = "B00LZOR"
+    |   t = "INTZOR"
+    |   t = "NUMZOR"
+    |   t = "KARZOR"
+    |   t = "YARNZOR"
+    )
+    {return t.image;}
+}
