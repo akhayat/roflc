@@ -4,7 +4,15 @@ public class Variable extends Declarable {
     private Expression initializer;
     private Type type;
 
-    /**
+    public Expression getInitializer() {
+		return initializer;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	/**
      * Constructs a variable.
      */
     public Variable(String name, Type type, Expression initializer) {
